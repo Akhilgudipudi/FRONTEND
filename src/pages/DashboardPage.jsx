@@ -9,8 +9,24 @@ import { StatusPill } from "../components/StatusPill.jsx";
 export function DashboardPage() {
   const { summary, loading, error, refreshing, reload } = useCertifications();
 
+  // ✅ fallback to prevent crashes when summary is not loaded yet
+  const safeSummary = summary || {
+    total: 0,
+    active: 0,
+    expiringSoon: 0,
+    expired: 0,
+    upcoming: [],
+    recent: [],
+    categories: [],
+  };
+
   if (loading) {
-    return <PageState title="Loading dashboard" message="Pulling certification metrics from the backend." />;
+    return (
+      <PageState
+        title="Loading dashboard"
+        message="Pulling certification metrics from the backend."
+      />
+    );
   }
 
   if (error) {
@@ -34,19 +50,30 @@ export function DashboardPage() {
           <p className="eyebrow">Overview</p>
           <h2>Stay ahead of renewals and keep every certification organized.</h2>
         </div>
-        <button className="button ghost" type="button" onClick={reload} disabled={refreshing}>
+        <button
+          className="button ghost"
+          type="button"
+          onClick={reload}
+          disabled={refreshing}
+        >
           <RefreshCcw size={16} />
           {refreshing ? "Refreshing..." : "Refresh"}
         </button>
       </section>
 
+      {/* ✅ Stats */}
       <section className="stats-grid">
-        <StatCard label="Total" value={summary.total} caption="All certifications" />
-        <StatCard label="Active" value={summary.active} caption="Currently valid" />
-        <StatCard label="Expiring Soon" value={summary.expiringSoon} caption="Within 30 days" />
-        <StatCard label="Expired" value={summary.expired} caption="Renewal needed" />
+        <StatCard label="Total" value={safeSummary.total} caption="All certifications" />
+        <StatCard label="Active" value={safeSummary.active} caption="Currently valid" />
+        <StatCard
+          label="Expiring Soon"
+          value={safeSummary.expiringSoon}
+          caption="Within 30 days"
+        />
+        <StatCard label="Expired" value={safeSummary.expired} caption="Renewal needed" />
       </section>
 
+      {/* ✅ Panels */}
       <section className="panel-grid">
         <article className="panel-card">
           <div className="panel-header">
@@ -56,14 +83,15 @@ export function DashboardPage() {
             </Link>
           </div>
 
-          {summary.upcoming.length ? (
+          {safeSummary.upcoming.length ? (
             <div className="compact-list">
-              {summary.upcoming.map((item) => (
+              {safeSummary.upcoming.map((item) => (
                 <div className="compact-row" key={item.id}>
                   <div>
                     <strong>{item.name}</strong>
                     <p>
-                      {item.issuer} • {format(parseISO(item.expiryDate), "MMM d, yyyy")}
+                      {item.issuer} •{" "}
+                      {format(parseISO(item.expiryDate), "MMM d, yyyy")}
                     </p>
                   </div>
                   <StatusPill status={item.status} />
@@ -71,7 +99,10 @@ export function DashboardPage() {
               ))}
             </div>
           ) : (
-            <PageState title="No pending renewals" message="Everything is currently active." />
+            <PageState
+              title="No pending renewals"
+              message="Everything is currently active."
+            />
           )}
         </article>
 
@@ -83,14 +114,15 @@ export function DashboardPage() {
             </Link>
           </div>
 
-          {summary.recent.length ? (
+          {safeSummary.recent.length ? (
             <div className="compact-list">
-              {summary.recent.map((item) => (
+              {safeSummary.recent.map((item) => (
                 <div className="compact-row" key={item.id}>
                   <div>
                     <strong>{item.name}</strong>
                     <p>
-                      {item.category} • Issued {format(parseISO(item.issueDate), "MMM d, yyyy")}
+                      {item.category} • Issued{" "}
+                      {format(parseISO(item.issueDate), "MMM d, yyyy")}
                     </p>
                   </div>
                   <StatusPill status={item.status} />
@@ -98,22 +130,30 @@ export function DashboardPage() {
               ))}
             </div>
           ) : (
-            <PageState title="Nothing here yet" message="Add your first certification to build the dashboard." />
+            <PageState
+              title="Nothing here yet"
+              message="Add your first certification to build the dashboard."
+            />
           )}
         </article>
       </section>
 
+      {/* ✅ Categories */}
       <section className="panel-card">
         <div className="panel-header">
           <h3>Category Distribution</h3>
         </div>
         <div className="category-grid">
-          {summary.categories.map((item) => (
-            <div key={item.category} className="category-tile">
-              <span>{item.category}</span>
-              <strong>{item.count}</strong>
-            </div>
-          ))}
+          {safeSummary.categories.length ? (
+            safeSummary.categories.map((item) => (
+              <div key={item.category} className="category-tile">
+                <span>{item.category}</span>
+                <strong>{item.count}</strong>
+              </div>
+            ))
+          ) : (
+            <PageState title="No data" message="No categories available yet." />
+          )}
         </div>
       </section>
     </div>
