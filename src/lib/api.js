@@ -1,31 +1,48 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+// ✅ DEBUG (remove later)
+console.log("API BASE URL:", API_BASE_URL);
+
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
 
-  if (response.status === 204) {
-    return null;
+    // ✅ Handle empty response
+    if (response.status === 204) {
+      return null;
+    }
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(payload?.message || "Request failed.");
+    }
+
+    return payload;
+  } catch (error) {
+    console.error("API ERROR:", error);
+    throw error;
   }
-
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(payload?.message || "Request failed.");
-  }
-
-  return payload;
 }
 
 export const certificationsApi = {
-  list: () => request("/api/certifications"),
-  summary: () => request("/api/certifications/summary"),
+  list: async () => {
+    console.log("Calling: /api/certifications");
+    return request("/api/certifications");
+  },
+
+  summary: async () => {
+    console.log("Calling: /api/certifications/summary");
+    return request("/api/certifications/summary");
+  },
+
   getById: (id) => request(`/api/certifications/${id}`),
 
   create: (body) =>
